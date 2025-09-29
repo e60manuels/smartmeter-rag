@@ -3,6 +3,8 @@ import argparse
 import chromadb
 from chromadb.utils import embedding_functions
 from openai import OpenAI
+import re
+from datetime import datetime
 
 # --- Constants ---
 CHROMA_DB_PATH = os.path.join(os.getcwd(), "chroma_db")
@@ -27,6 +29,40 @@ def get_chroma_collection():
     )
     return collection
 
+def extract_date_from_query(query_text: str) -> str | None:
+    """
+    Extracts a date in YYYY-MM-DD format from the query text.
+    Supports patterns like 'DD maand YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD'.
+    """
+    # Pattern for 'DD maand YYYY' (e.g., '1 september 2025')
+    month_map = {
+        'januari': '01', 'februari': '02', 'maart': '03', 'april': '04',
+        'mei': '05', 'juni': '06', 'juli': '07', 'augustus': '08',
+        'september': '09', 'oktober': '10', 'november': '11', 'december': '12'
+    }
+    pattern_dd_month_yyyy = r'\b(\d{1,2})\s+(' + '|'.join(month_map.keys()) + r')\s+(\d{4})\b'
+    match = re.search(pattern_dd_month_yyyy, query_text, re.IGNORECASE)
+    if match:
+        day, month_str, year = match.groups()
+        month_num = month_map[month_str.lower()]
+        return f"{year}-{month_num}-{int(day):02d}"
+
+    # Pattern for 'DD-MM-YYYY' or 'DD/MM/YYYY'
+    pattern_dd_mm_yyyy = r'\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b'
+    match = re.search(pattern_dd_mm_yyyy, query_text)
+    if match:
+        day, month, year = match.groups()
+        return f"{year}-{int(month):02d}-{int(day):02d}"
+
+    # Pattern for 'YYYY-MM-DD'
+    pattern_yyyy_mm_dd = r'\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b'
+    match = re.search(pattern_yyyy_mm_dd, query_text)
+    if match:
+        year, month, day = match.groups()
+        return f"{year}-{int(month):02d}-{int(day):02d}"
+
+    return None
+
 def query_llm(query_text: str, n_results: int = 5):
     """
     Queries ChromaDB for relevant context and then queries the LLM with that context.
@@ -37,9 +73,17 @@ def query_llm(query_text: str, n_results: int = 5):
     # 1. Retrieve context from ChromaDB
     print("1. Retrieving relevant documents from ChromaDB...")
     collection = get_chroma_collection()
+    
+    where_clause = {}
+    date_filter = extract_date_from_query(query_text)
+    if date_filter:
+        where_clause["date"] = date_filter
+        print(f"   Applying date filter: {date_filter}")
+
     results = collection.query(
         query_texts=[query_text],
-        n_results=n_results
+        n_results=n_results,
+        where=where_clause if where_clause else None
     )
     
     context_documents = results.get('documents', [[]])[0]
@@ -52,7 +96,8 @@ def query_llm(query_text: str, n_results: int = 5):
     context = "\n".join([f"- {doc}" for doc in context_documents])
     prompt = f"""You are an expert assistant for answering questions about smart meter energy data. Please answer the user's question based *only* on the context provided below. If the context does not contain the answer, say that you cannot answer the question with the given information. Do not make up any information.
 
---- CONTEXT ---
+---
+CONTEXT ---
 {context}
 
 --- QUESTION ---

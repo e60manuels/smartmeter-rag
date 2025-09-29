@@ -56,7 +56,8 @@ def load_data():
                     # Create metadata
                     metadata = {
                         "timestamp": str(ts),
-                        "source_file": os.path.basename(file_path)
+                        "source_file": os.path.basename(file_path),
+                        "date": ts.strftime("%Y-%m-%d") # Added date for filtering
                     }
                     if power_import is not None:
                         metadata["power_import_kwh"] = power_import
@@ -82,6 +83,14 @@ def setup_chroma_db():
     print("Setting up ChromaDB...")
     # 1. Initialize ChromaDB client
     client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+
+    # Check if collection exists and delete it to ensure fresh indexing
+    try:
+        client.delete_collection(name=COLLECTION_NAME)
+        print(f"Existing collection '{COLLECTION_NAME}' deleted.")
+    except:
+        print(f"Collection '{COLLECTION_NAME}' does not exist or could not be deleted (first run).")
+        pass # Collection does not exist, no need to delete
 
     # 2. Create an embedding function
     embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(

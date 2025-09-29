@@ -1,4 +1,3 @@
-
 import os
 import chromadb
 from chromadb.utils import embedding_functions
@@ -9,11 +8,11 @@ CHROMA_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__
 COLLECTION_NAME = "smartmeter_data"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-def test_retrieval():
+def test_retrieval_date_filter_only():
     """
-    Tests the retrieval of documents from the ChromaDB based on a sample query.
+    Tests if documents for a specific date exist in ChromaDB using only metadata filtering.
     """
-    print("--- Starting Retrieval Test ---")
+    print("--- Starting Retrieval Test (Date Filter Only) ---")
     
     if not os.path.exists(CHROMA_DB_PATH):
         print(f"Error: ChromaDB path not found at '{CHROMA_DB_PATH}'")
@@ -37,37 +36,36 @@ def test_retrieval():
         print(f"Error connecting to collection: {e}")
         return
 
-    # 3. Define a sample query
-    # Using a specific date that exists in the sample data for a targeted query
-    query_text = "Wat was het totale stroomverbruik en gasverbruik op 15 augustus 2025?"
-    print(f"\nQuery: \"{query_text}\"\n")
+    # 3. Define the date to filter for
+    target_date = "2025-09-01"
+    print(f"\nAttempting to retrieve documents for date: {target_date}")
 
-    # 4. Query the collection
+    # 4. Query the collection using only the 'where' clause
     try:
         results = collection.query(
-            query_texts=[query_text],
-            n_results=3  # Get the top 3 most relevant documents
+            query_texts=[""], # Empty query_text as we are only filtering by metadata
+            n_results=100, # Get up to 100 results for this date
+            where={"date": target_date}
         )
     except Exception as e:
-        print(f"Error during query: {e}")
+        print(f"Error during query with date filter: {e}")
         return
 
     # 5. Print the results
-    print("\n--- Top 3 Retrieved Documents ---")
-    if not results or not results.get('documents'):
-        print("No results found.")
+    print("\n--- Retrieved Documents with Date Filter ---")
+    context_documents = results.get('documents', [[]])[0]
+    if not context_documents:
+        print(f"No documents found for date {target_date} using metadata filter.")
         return
 
-    for i, doc in enumerate(results['documents'][0]):
+    print(f"Found {len(context_documents)} documents for {target_date}.")
+    for i, doc in enumerate(context_documents):
         print(f"\nResult {i+1}:")
         print(f"  Document: {doc}")
-        # Also print metadata and distance if available
-        if results.get('metadatas') and results['metadatas'][0][i]:
-            print(f"  Metadata: {results['metadatas'][0][i]}")
-        if results.get('distances') and results['distances'][0][i]:
-            print(f"  Distance: {results['distances'][0][i]:.4f}")
+        metadata = results['metadatas'][0][i]
+        print(f"  Metadata: {metadata}")
 
-    print("\n--- Retrieval Test Complete ---")
+    print("\n--- Retrieval Test (Date Filter Only) Complete ---")
 
 if __name__ == "__main__":
-    test_retrieval()
+    test_retrieval_date_filter_only()
