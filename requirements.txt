@@ -1,0 +1,17 @@
+# Embedding model
+sentence-transformers>=2.2.2
+
+# Vector database
+chromadb>=0.4.9
+
+# HTTP client voor NVIDIA API
+openai>=1.0.0
+
+# Data handling
+pandas>=2.0.0
+
+# JSON handling
+ujson>=5.8.0
+
+# Voor algemene ondersteuning
+numpy>=1.24.0
