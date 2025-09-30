@@ -1,0 +1,7 @@
+herbruikbare Python-functie (Tools):
+
+Instructie voor Tool 1: De Generieke Calculator
+"Genereer een robuuste Python-functie genaamd calculate_energy_data. Deze functie moet drie parameters accepteren: start_date (string), end_date (string) en operation (string, kan 'total_consumption', 'max_feedin' of 'avg_consumption' zijn). 
+De functie moet verbinding maken met mijn lokale ChromaDB-collectie ('smartmeter_master'), de data filteren op de datums, de gevraagde bewerking uitvoeren op de verbruik_kwh of opbrengst_kwh metadata, en het numerieke resultaat retourneren."
+
+

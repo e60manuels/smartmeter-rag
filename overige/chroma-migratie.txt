@@ -1,0 +1,12 @@
+Genereer een zelfstandig Python migratiescript om de jsonl data uit het P1-energie-dashboard te migreren naar chroma. 
+Dit script moet de volgende taken uitvoeren:
+
+1. Chroma Connectie: Maak verbinding met de lokale chroma persistent client en initialiseer een nieuwe of bestaande collectie genaamd smartmeter_master.
+2. JSONL Inlezen: Lees de JSONL-bestanden uit map C:\Users\emanu\Documenten\GitHub\P1-energie-dashboard\sample_logs in.
+3. Data Transformatie: Voor elke datarecord in het JSONL-bestand, creëer drie elementen:
+- Metadata (Cruciaal): Sla de ruwe numerieke waarden op (zoals tijdstip, verbruik en teruglevering) als metadata. Het tijdstip moet worden geconverteerd naar een numerieke epoch timestamp voor eenvoudige filtering.
+- Document: Genereer een korte, beschrijvende tekstuele samenvatting van het dagelijkse patroon (bijvoorbeeld 'Verbruikspiek in de avond, lage opbrengst overdag') om later te gebruiken voor semantische RAG.
+- ID: Gebruik de originele, unieke tijdstempel als ID om duplicaten te voorkomen.
+4. Embedding: Gebruik het bestaande MiniLM-L6-v2 model om het gegenereerde Document te embedden.
+5. Chroma Opslag: Voeg de vector, het document, de metadata en de ID toe aan de smartmeter_master collectie.
+
